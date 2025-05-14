@@ -17,6 +17,11 @@ public:
      */
     {{Name}}(const char* value);
 
+    /*! Constructor.
+     * \param value ISO8601 string representation of {{schema.format}} to be used for the initial value of {{Name}} instance.
+     */
+    {{Name}}(const std::chrono::system_clock::time_point& value);
+    
     {%-if schema.default is defined %}
     /*! Constructor that uses the default value of "{{schema.default}}".
      */
