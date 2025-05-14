@@ -61,7 +61,7 @@ void {{className}}::Set{{ObjectName(componentName, s)}}(const {{ObjectType(compo
 }
 {%endfor%}
 
-{{className}} {{className}}::FromJson(const rapidjson::Value& json)
+{{className}} {{className}}::FromJson(const nlohmann::json& json)
 {
     {%-if schema.requiredProperties | length > 0 %}
     ThrowIfMissingRequiredProperties(json);
@@ -73,15 +73,15 @@ void {{className}}::Set{{ObjectName(componentName, s)}}(const {{ObjectType(compo
     return {{className}}({%-for s in schema.allOf %}{%set componentName%}{{ComponentName(Name, s, loop.index)}}{%endset%}init{{componentName}}{%if not loop.last%}, {%endif%}{%endfor%});
 }
 
-void {{className}}::ToJson(rapidjson::Value& value, rapidjson::Value::AllocatorType& allocator) const
+void {{className}}::ToJson(nlohmann::json& value) const
 {
-    if (!value.IsObject())
+    if (!value.is_object())
     {
-        value.SetObject();
+        value = nlohmann::json::object();
     }
 
     {%-for s in schema.allOf %}{%set componentName%}{{ComponentName(Name, s, loop.index)}}{%endset%}
-    {{componentName|privatize}}.ToJson(value, allocator);
+    {{componentName|privatize}}.ToJson(value);
     {%-endfor %}
     {%-if schema.requiredProperties | length > 0 %}
     ThrowIfMissingRequiredProperties(value);
@@ -106,14 +106,14 @@ std::string {{className}}::GetHandle() const
 
 {%-if schema.requiredProperties | length > 0 %}
 
-void {{className}}::ThrowIfMissingRequiredProperties(const rapidjson::Value& json)
+void {{className}}::ThrowIfMissingRequiredProperties(const nlohmann::json& json)
 {
-    if (!json.IsObject())
+    if (!json.is_object())
     {
         throw {{exception}}("Not an object");
     }
     {%-for reqProp in schema.requiredProperties | sort%}
-    if (!json.HasMember("{{reqProp}}"))
+    if (!json.contains("{{reqProp}}"))
     {
         throw {{exception}}("Missing '{{reqProp}}' property");
     }

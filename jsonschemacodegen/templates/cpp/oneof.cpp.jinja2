@@ -40,10 +40,19 @@ namespace {{origNs}} {
     {%if not loop.first%}
     else {%endif%}if (inst._value.which() == {{loop.index - 1}})
     {
-        os << boost::get<{{ObjectType(optionName, s)}}>(inst._value);
+        os << std::get<{{ObjectType(optionName, s)}}>(inst._value);
     }
     {%-endfor %}
     return os;
+}
+
+namespace {
+    template <class T>
+    inline void local_hash_combine(std::size_t& seed, const T& v)
+    {
+        std::hash<T> hasher;
+        seed ^= hasher(v) + 0x9e3779b9 + (seed<<6) + (seed>>2);
+    }
 }
 
 {{std}}size_t hash_value(const {{className}}& inst)
@@ -53,7 +62,7 @@ namespace {{origNs}} {
     {%if not loop.first%}
     else {%endif%}if (inst._value.which() == {{loop.index - 1}})
     {
-        boost::hash_combine(seed, boost::get<{{ObjectType(optionName, s)}}>(inst._value));
+        local_hash_combine(seed, std::get<{{ObjectType(optionName, s)}}>(inst._value));
     }
     {%-endfor %}
     return seed;
@@ -61,19 +70,19 @@ namespace {{origNs}} {
 {%for origNs in originalNamespace %}}{%-endfor%} // end namespaces
 {%-endif%}
 
-boost::variant<{{optionList}}> {{className}}::Get() const
+std::variant<{{optionList}}> {{className}}::Get() const
 {
     return _value;
 }
 
-void {{className}}::Set(const boost::variant<{{optionList}}>& variant)
+void {{className}}::Set(const std::variant<{{optionList}}>& variant)
 {
     _value = variant;
     {%for s in schema.oneOf %}{%set optionName%}Option{{loop.index}}{%endset-%}
     {%if not loop.first%}
     else {%endif%}if (_value.which() == {{loop.index - 1}})
     {
-        boost::get<{{ObjectType(optionName, s)}}>(_value).SetHandle(_handle);
+        std::get<{{ObjectType(optionName, s)}}>(_value).SetHandle(_handle);
     }
     {%-endfor %}
 }
@@ -101,7 +110,7 @@ void {{className}}::Set(const boost::variant<{{optionList}}>& variant)
 }
 {%-endif%}
 
-{{className}} {{className}}::FromJson(const rapidjson::Value& json)
+{{className}} {{className}}::FromJson(const nlohmann::json& json)
 {
     {{exception}}Collection exceptionCollection;
     {%for s in schema.oneOf -%}{%set optionName%}Option{{loop.index}}{%endset-%}
@@ -122,13 +131,13 @@ void {{className}}::Set(const boost::variant<{{optionList}}>& variant)
     throw {{exception}}(exceptionCollection.what());
 }
 
-void {{className}}::ToJson(rapidjson::Value& value, rapidjson::Value::AllocatorType& allocator) const
+void {{className}}::ToJson(nlohmann::json& value) const
 {
     {%for s in schema.oneOf %}{%set optionName%}Option{{loop.index}}{%endset-%}
     {%if not loop.first%}
     else {%endif%}if (_value.which() == {{loop.index - 1}})
     {
-        boost::get<{{ObjectType(optionName, s)}}>(_value).ToJson(value, allocator);
+        std::get<{{ObjectType(optionName, s)}}>(_value).ToJson(value);
     }
     {%-endfor %}
 }
@@ -141,7 +150,7 @@ void {{className}}::SetHandle(const std::string& handle)
     {%if not loop.first%}
     else {%endif%}if (_value.which() == {{loop.index - 1}})
     {
-        boost::get<{{ObjectType(optionName, s)}}>(_value).SetHandle(handle);
+        std::get<{{ObjectType(optionName, s)}}>(_value).SetHandle(handle);
     }
     {%-endfor %}
 }

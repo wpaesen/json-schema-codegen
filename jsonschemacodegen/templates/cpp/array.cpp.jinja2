@@ -65,16 +65,16 @@ void {{className}}::Append(const {{itemtype}}& item)
     _arr.back().SetHandle(_handle);
 }
 
-{{className}} {{className}}::FromJson(const {{resolver.cpp_resolve_namespace(['rapidjson'])}}Value& json)
+{{className}} {{className}}::FromJson(const nlohmann::json& json)
 {
-    if (!json.IsArray())
+    if (!json.is_array())
     {
         throw {{exception}}("The JSON wasn't an array");
     }
     {{resolver.cpp_resolve_namespace(['std'])}}vector<{{itemtype}}> arr;
     {{exception}}Collection exceptionCollection;
     unsigned i = 0;
-    for (auto& v : json.GetArray())
+    for (auto& v : json)
     {
         try
         {
@@ -93,14 +93,14 @@ void {{className}}::Append(const {{itemtype}}& item)
     return {{className}}(arr);
 }
 
-void {{className}}::ToJson({{resolver.cpp_resolve_namespace(['rapidjson'])}}Value& value, {{resolver.cpp_resolve_namespace(['rapidjson', 'Value'])}}AllocatorType& allocator) const
+void {{className}}::ToJson(nlohmann::json& value) const
 {
-    value.SetArray();
+    value = nlohmann::json::array();
     for (const {{itemtype}}& el : _arr)
     {
-        {{resolver.cpp_resolve_namespace(['rapidjson'])}}Value elementValue;
-        el.ToJson(elementValue, allocator);
-        value.PushBack(elementValue, allocator);
+        nlohmann::json elementValue;
+        el.ToJson(elementValue);
+        value.push_back(elementValue);
     }
 }
 

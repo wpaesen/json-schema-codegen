@@ -81,6 +81,46 @@ class ResolverBaseClass(abc.ABC):
     def cpp_get_lib_ns(self) -> list:
         pass
 
+class CodeTemplator2(templator.MarkdownTemplator):
+
+    """Since most code can use markdown in documentation blocks, we inherit from MarkdownTemplator.
+    """
+
+    def __init__(self, output_dir):
+        super().__init__(output_dir)
+        self.add_filter('enumify', self._enumify)
+        self.add_filter('privatize', self._privatize)
+        self.add_filter('doxygenify', self._doxygenify)
+        self.enum_overrules = {}
+
+    def set_enum_overrule(self, value, name):
+        self.enum_overrules[value] = name
+
+    def _enumify(self, s: str):
+        if s in self.enum_overrules:
+            return self.enum_overrules[s]
+
+        if type(s) == int:
+            s = 'Val_'+str(s)
+        elif s[0].isnumeric():
+            s = '_'+s
+
+        return stringcase.constcase(s)
+    
+    @classmethod
+    def _privatize(cls, s: str):
+        return cls._add_leading_underscore(stringcase.camelcase(s))
+
+    @staticmethod
+    def _doxygenify(s: str):
+        """ Translates a markdown string for use as a doxygen description.
+        """
+        if "```plantuml" in s:
+            plantuml_replace = re.compile(r"```plantuml\n(.*)```", re.DOTALL|re.MULTILINE)
+            return plantuml_replace.sub(r"\\startuml\n\1\\enduml", s)
+        return s
+
+
 
 class GeneratorFromSchema(object):
 
@@ -91,19 +131,33 @@ class GeneratorFromSchema(object):
         }
         assert(isinstance(resolver, ResolverBaseClass)), "Resolver is %s" % (resolver)
         self.resolver = resolver
+        self.enum_overrules = {}
 
     def _make_sure_directory_exists(self, output_key, dir_path):
         d = os.path.join(self.output_dir[output_key], dir_path)
         if not os.path.exists(d):
             os.makedirs(d)
 
+    def set_enum_overrule(self, value, name):
+        self.enum_overrules[value] = name
+
+    def set_enum_overrules(self, enum_dict):
+        for value, name in enum_dict.items():
+            self.set_enum_overrule(value, name)
+
     def GetDeps(self, schema):
         return schema.CppIncludes(self.resolver)
 
+
     def Generate(self, schema, path):
         retval = [None, None]
-        srcGenerator = templator.CodeTemplator(self.output_dir['src']).add_template_package('jsonschemacodegen.templates.cpp')
-        headerGenerator = templator.CodeTemplator(self.output_dir['header']).add_template_package('jsonschemacodegen.templates.cpp')
+        srcGenerator = CodeTemplator2(self.output_dir['src']).add_template_package('jsonschemacodegen.templates.cpp')
+        headerGenerator = CodeTemplator2(self.output_dir['header']).add_template_package('jsonschemacodegen.templates.cpp')
+
+        for value, name in self.enum_overrules.items():
+            srcGenerator.set_enum_overrule(value, name)
+            headerGenerator.set_enum_overrule(value, name)
+
         args = {
             "Name": self.resolver.cpp_get_name(path),
             "schema": schemawrappers.SchemaFactory(schema),

@@ -1,5 +1,5 @@
 {%-import 'constraints.jinja2' as constraint-%}
-{%-if schema.type == 'integer'%}{%-set rjtype = 'int'%}{%-else%}{%-set rjtype = 'number'%}{%-endif-%}
+{%-if schema.type == 'number_integer'%}{%-set rjtype = 'integer'%}{%-else%}{%-set rjtype = 'number'%}{%-endif-%}
 {%-if schema.type == 'integer'%}{%-set cpptype = 'int'%}{%-else%}{%-set cpptype = 'double'%}{%-endif%}
 {%-set std = resolver.cpp_resolve_namespace(['std']) %}
 {%-set className = resolver.cpp_resolve_namespace(ns)+Name%}
@@ -44,7 +44,7 @@ bool operator< (const {{className}}& left, const {{className}}& right)
 
 {{std}}size_t hash_value(const {{className}}& num)
 {
-    return boost::hash_value(num._value);
+    return std::hash<decltype(num._value)>{}(num);
 }
 {%for origNs in originalNamespace %}}{%-endfor%} // end namespaces
 
@@ -55,7 +55,7 @@ bool operator< (const {{className}}& left, const {{className}}& right)
     return *this;
 }
 
-{{cpptype}} {{className}}::Get() const
+const {{cpptype}}& {{className}}::Get() const
 {
     return _value;
 }
@@ -82,25 +82,25 @@ void {{className}}::Validate({{cpptype}} testValue)
     {%-endif%}
 }
 
-{{className}} {{className}}::FromJson(const {{resolver.cpp_resolve_namespace(['rapidjson'])}}Value& json)
+{{className}} {{className}}::FromJson(const nlohmann::json& json)
 {
-    if (!(json.Is{{rjtype | UpperCamelCase}}()))
+    if (!(json.is_{{rjtype}}()))
     {
         throw {{exception}}("Wasn't a {{rjtype}}");
     }
 
-    {{className}} newObject(json.Get{{cpptype | UpperCamelCase}}());
+    {{className}} newObject(json.get<{{cpptype}}>());
     return newObject;
 }
 
 {{className}} {{className}}::FromString(const {{std}}string& str)
 {
-    return {{className}}({{resolver.cpp_resolve_namespace(['boost'])}}lexical_cast<{{cpptype}}>(str));
+    return FromString(nlohmann::json::parse(str));
 }
 
-void {{className}}::ToJson({{resolver.cpp_resolve_namespace(['rapidjson'])}}Value& value, {{resolver.cpp_resolve_namespace(['rapidjson', 'Value'])}}AllocatorType& allocator) const
+void {{className}}::ToJson(nlohmann::json& value) const
 {
-    value.Set{{cpptype | UpperCamelCase}}(_value); 
+    value = _value;
 }
 
 void {{className}}::SetHandle(const std::string& handle)

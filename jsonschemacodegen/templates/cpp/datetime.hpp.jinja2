@@ -53,11 +53,11 @@ public:
      */
     {{Name}}& operator=(const char* value);
 
-    /*! Assignment operator to set the value of the {{Name}} instance from a boost ptime.
-     * \param value boost ptime object.
+    /*! Assignment operator to set the value of the {{Name}} instance from a chrono timestamp.
+     * \param value std::chrono::system_clock::time_point object.
      * \return reference to the {{Name}} instance
      */
-    {{Name}}& operator=(const boost::posix_time::ptime& value);
+    {{Name}}& operator=(const std::chrono::system_clock::time_point& value);
 
     /*! Provide the string value of the {{Name}} instance to a stream.
      * \param os the stream object
@@ -81,7 +81,7 @@ public:
     /*! Sets the encapsulated time object.
      * \param datetime new time value
      */
-    void Set(const boost::posix_time::ptime& datetime);
+    void Set(const std::chrono::system_clock::time_point& datetime);
 
     /*! Sets the encapsulated time object to represent the time this is called.
      */
@@ -103,17 +103,17 @@ public:
      */
     bool IsCurrentTime() const;
 
-    /*! Returns boost time object.
+    /*! Returns std::chrono::system_clock time object.
      * \return The contained time, either static or dynamic current time.
      */
-    boost::posix_time::ptime Get() const;
+    std::chrono::system_clock::time_point Get() const;
 
     /*! Create a new {{Name}} object from a JSON string.
      * \throw if the JSON string wasn't ISO8601 {{schema.format}} formatted.
      * \return new {{Name}} object containing values from the JSON.
      * \param json JSON structure to use for creating new {{Name}} object.
      */
-    static {{Name}} FromJson(const rapidjson::Value& json);
+    static {{Name}} FromJson(const nlohmann::json& json);
 
     /*! Create a new {{Name}} object from the string.
      * The string must be ISO8601 {{schema.format}} formatted.
@@ -125,9 +125,8 @@ public:
 
     /*! Serialize the {{Name}} instance into a JSON string.
      * \param value is modified to be a string type containing an ISO8601 {{schema.format}}.
-     * \param allocator is used for rapidjson allocation.
      */
-    void ToJson(rapidjson::Value& value, rapidjson::Value::AllocatorType& allocator) const;
+    void ToJson(nlohmann::json& value) const;
 
     /*! Sets a string handle associated with this {{Name}} instance.
      * This gets called by a parent object after creating an instance that is used for an object's property.
@@ -142,6 +141,6 @@ public:
      */
     std::string GetHandle() const;
 private:
-    boost::optional<boost::posix_time::ptime> _value;
+    std::optional<std::chrono::system_clock::time_point> _value;
     std::string _handle;
 };

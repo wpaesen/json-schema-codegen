@@ -4,14 +4,14 @@
 {
 }
 
-boost::none_t {{className}}::Get() const
+std::nullopt_t {{className}}::Get() const
 {
-    return boost::none;
+    return std::nullopt;
 }
 
-{{className}} {{className}}::FromJson(const {{resolver.cpp_resolve_namespace(['rapidjson'])}}Value& json)
+{{className}} {{className}}::FromJson(const nlohmann::json& json)
 {
-    if (!(json.IsNull()))
+    if (!(json.is_null()))
     {
         throw {{exception}}("Not the NULL value");
     }
@@ -19,9 +19,9 @@ boost::none_t {{className}}::Get() const
     return {{className}}();
 }
 
-void {{className}}::ToJson({{resolver.cpp_resolve_namespace(['rapidjson'])}}Value& value, {{resolver.cpp_resolve_namespace(['rapidjson', 'Value'])}}AllocatorType& allocator) const
+void {{className}}::ToJson(nlohmann::json& value) const
 {
-    value.SetNull();  
+    value = nullptr;
 }
 
 void {{className}}::SetHandle(const std::string& handle)

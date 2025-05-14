@@ -1,6 +1,5 @@
 {%-import 'propname.jinja2' as helper-%}
 {%-set className = resolver.cpp_resolve_namespace(ns)+Name%}
-{%-set rapidjson = resolver.cpp_resolve_namespace(['rapidjson']) %}
 {%macro NestedObjectNameOnly(name) -%}
     {%-if name|UpperCamelCase != Name|UpperCamelCase%}{{-name | UpperCamelCase-}}{%else%}{{name | UpperCamelCase}}Property{%endif-%}
 {%-endmacro%}
@@ -77,7 +76,7 @@
     return *this;
 }
 {%else%}
-boost::optional<{{ObjectType(propName, propSchema)}}> {{className}}::Get{{propName | UpperCamelCase}}() const
+std::optional<{{ObjectType(propName, propSchema)}}> {{className}}::Get{{propName | UpperCamelCase}}() const
 {
     return {{propName | privatize}};
 }
@@ -91,43 +90,43 @@ boost::optional<{{ObjectType(propName, propSchema)}}> {{className}}::Get{{propNa
 {%endif%}
 {%-endfor%}
 
-{{className}} {{className}}::FromJson(const {{rapidjson}}Value& json)
+{{className}} {{className}}::FromJson(const nlohmann::json& json)
 {
-    if (!(json.IsObject()))
+    if (!(json.is_object()))
     {
         throw {{exception}}("JSON wasn't an object");
     }
     {##}
     {{exception}}Collection exceptionCollection;
     {%for propName, propSchema in schema.RequiredList()-%}
-    boost::optional<{{ObjectType(propName, propSchema)}}> optLocal{{propName | UpperCamelCase}};
-    if (!json.HasMember({{helper.ConstPropertyName(propName)}}))
+    std::optional<{{ObjectType(propName, propSchema)}}> optLocal{{propName | UpperCamelCase}};
+    if (!json.contains({{helper.ConstPropertyName(propName)}}))
     {
         exceptionCollection.AddException({{exception}}("Property is missing", "{{propName}}"));
     }
     else
     {
-        optLocal{{propName | UpperCamelCase}} = {{ObjectType(propName, propSchema)}}::FromJson(json[{{helper.ConstPropertyName(propName)}}]);
+        optLocal{{propName | UpperCamelCase}} = {{ObjectType(propName, propSchema)}}::FromJson(json.at({{helper.ConstPropertyName(propName)}}));
         optLocal{{propName | UpperCamelCase}}->SetHandle({{helper.ConstPropertyName(propName)}});
     }
     {%endfor%}
-    boost::optional<{{className}}> optNewInstance;
+    std::optional<{{className}}> optNewInstance;
     {%-if schema.RequiredList() %}
     if ({%for propName, propSchema in schema.RequiredList()%}optLocal{{propName | UpperCamelCase}}{%if not loop.last%} && {%endif%}{%endfor%})
     {
         optNewInstance = {{className}}({%for propName, propSchema in schema.RequiredList()%}*optLocal{{propName | UpperCamelCase}}{%if not loop.last%}, {%endif%}{%endfor%});
     }
     {%else%}
-    // Yes I know this looks weird to create a boost::optional only to immediately instantiate it.
+    // Yes I know this looks weird to create a std::optional only to immediately instantiate it.
     // However, this is generated code, and there is a branch you don't see here where we conditionally instantiate it.
     optNewInstance = {{className}}();
     {%-endif%}
     {%-for propName, propSchema in schema.UnRequiredList()%}
-    if (json.HasMember({{helper.ConstPropertyName(propName)}}))
+    if (json.contains({{helper.ConstPropertyName(propName)}}))
     {
         try
         {
-            auto local{{propName | UpperCamelCase}} = {{ObjectType(propName, propSchema)}}::FromJson(json[{{helper.ConstPropertyName(propName)}}]);
+            auto local{{propName | UpperCamelCase}} = {{ObjectType(propName, propSchema)}}::FromJson(json.at({{helper.ConstPropertyName(propName)}}));
             local{{propName | UpperCamelCase}}.SetHandle({{helper.ConstPropertyName(propName)}});
             if (optNewInstance)
             {
@@ -155,24 +154,25 @@ boost::optional<{{ObjectType(propName, propSchema)}}> {{className}}::Get{{propNa
     return *optNewInstance;
 }
 
-void {{className}}::ToJson({{rapidjson}}Value& value, {{resolver.cpp_resolve_namespace(['rapidjson', 'Value'])}}AllocatorType& allocator) const
+void {{className}}::ToJson(nlohmann::json& value) const
 {
-    if (!value.IsObject())
+    if (!value.is_object())
     {
-        value.SetObject();
+        value = nlohmann::json::object();
     }
 
     {%-for propName, propSchema in schema.properties.items() %}
     {%-if propName in schema.required%}
-    {{rapidjson}}Value temp{{propName|UpperCamelCase}};
-    {{propName|privatize}}.ToJson(temp{{propName|UpperCamelCase}}, allocator);
-    value.AddMember({{rapidjson}}StringRef({{helper.ConstPropertyName(propName)}}), temp{{propName|UpperCamelCase}}, allocator);
+    nlohmann::json temp{{propName|UpperCamelCase}};
+    {{propName|privatize}}.ToJson(temp{{propName|UpperCamelCase}});
+    value[{{helper.ConstPropertyName(propName)}}] = temp{{propName|UpperCamelCase}};
+
     {%else%}
     if ({{propName|privatize}})
     {
-        {{rapidjson}}Value temp{{propName|UpperCamelCase}};
-        {{propName|privatize}}->ToJson(temp{{propName|UpperCamelCase}}, allocator);
-        value.AddMember({{rapidjson}}StringRef({{helper.ConstPropertyName(propName)}}), temp{{propName|UpperCamelCase}}, allocator);
+        nlohmann::json temp{{propName|UpperCamelCase}};
+        {{propName|privatize}}->ToJson(temp{{propName|UpperCamelCase}});
+        value[{{helper.ConstPropertyName(propName)}}] = temp{{propName|UpperCamelCase}};
     }
     {%endif%}
     {%-endfor%}

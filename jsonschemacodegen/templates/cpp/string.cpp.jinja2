@@ -55,7 +55,7 @@ bool operator< (const {{className}}& left, const {{className}}& right)
 
 {{std}}size_t hash_value(const {{className}}& str)
 {
-    return boost::hash_value(str._value);
+    return std::hash<std::string>{}(str._value);
 }
 {%for origNs in originalNamespace %}}{%-endfor%} // end namespaces
 
@@ -76,9 +76,12 @@ bool operator< (const {{className}}& left, const {{className}}& right)
 {%-if schema.format is defined and schema.format == 'uuid'%}
 {{className}}& {{className}}::SetUuid()
 {
-    boost::uuids::random_generator generator;
-    boost::uuids::uuid uuid = generator();
-    Set(boost::uuids::to_string(uuid));
+    uuid_t uuid;
+    uuid_generate(uuid);
+
+    std::array<char, 48> buf;
+    uuid_unparse_lower(uuid, buf.data());
+    Set(std::string(buf.data()));
     return *this;
 }
 {%-endif-%}{# #}
@@ -116,17 +119,17 @@ void {{className}}::Validate(const {{std}}string& testValue)
     {%-endif%}
 }
 
-{{className}} {{className}}::FromJson(const {{resolver.cpp_resolve_namespace(['rapidjson'])}}Value& json)
+{{className}} {{className}}::FromJson(const nlohmann::json& json)
 {
-    if (!(json.IsString()))
+    if (!(json.is_string()))
     {
         throw {{exception}}("JSON wasn't a string");
     }
     {%if schema.const is defined%}
-    Validate(json.GetString());
+    Validate(json.get<{{std}}string>());
     return {{className}}();
     {%-else%}
-    return {{className}}(json.GetString());
+    return {{className}}(json.get<{{std}}string>());
     {%-endif%}
 }
 
@@ -140,9 +143,9 @@ void {{className}}::Validate(const {{std}}string& testValue)
     {%-endif%}
 }
 
-void {{className}}::ToJson({{resolver.cpp_resolve_namespace(['rapidjson'])}}Value& value, {{resolver.cpp_resolve_namespace(['rapidjson', 'Value'])}}AllocatorType& allocator) const
+void {{className}}::ToJson(nlohmann::json& value) const
 {
-    value.SetString(_value.c_str(), _value.size(), allocator);  
+    value = _value;
 }
 
 void {{className}}::SetHandle(const std::string& handle)

@@ -5,6 +5,7 @@
 {%-for dep in deps %}
 #include {{dep}}
 {%-endfor%}
+#include "exceptions.hpp"
 
 {%-set originalNamespace=ns%}
 {%for using in resolver.cpp_get_usings() %}

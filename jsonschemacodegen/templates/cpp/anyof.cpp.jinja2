@@ -30,7 +30,7 @@
 }
 
 {%-for s in schema.anyOf %}{%set componentName%}Component{{loop.index}}{%endset%}
-boost::optional<{{ObjectType(componentName, s)}}> {{className}}::Get{{ObjectName(componentName, s)}}() const
+std::optional<{{ObjectType(componentName, s)}}> {{className}}::Get{{ObjectName(componentName, s)}}() const
 {
     return {{componentName|privatize}};
 }
@@ -42,7 +42,7 @@ void {{className}}::Set{{ObjectName(componentName, s)}}(const {{ObjectType(compo
 }
 {%endfor%}
 
-{{className}} {{className}}::FromJson(const rapidjson::Value& json)
+{{className}} {{className}}::FromJson(const nlohmann::json& json)
 {
     {%-if schema.requiredProperties | length > 0 %}
     ThrowIfMissingRequiredProperties(json);
@@ -62,17 +62,17 @@ void {{className}}::Set{{ObjectName(componentName, s)}}(const {{ObjectType(compo
     return returnObject;
 }
 
-void {{className}}::ToJson(rapidjson::Value& value, rapidjson::Value::AllocatorType& allocator) const
+void {{className}}::ToJson(nlohmann::json& value) const
 {
-    if (!value.IsObject())
+    if (!value.is_object())
     {
-        value.SetObject();
+        value = nlohmann::json::object();
     }
 
     {%-for s in schema.anyOf %}{%set componentName%}Component{{loop.index}}{%endset%}
     if ({{componentName|privatize}})
     {
-        {{componentName|privatize}}->ToJson(value, allocator);
+        {{componentName|privatize}}->ToJson(value);
     }
     {%-endfor %}
     {%-if schema.requiredProperties | length > 0 %}
@@ -99,7 +99,7 @@ std::string {{className}}::GetHandle() const
 }
 
 {%if schema.requiredProperties | length > 0 %}
-void {{className}}::ThrowIfMissingRequiredProperties(const rapidjson::Value& json)
+void {{className}}::ThrowIfMissingRequiredProperties(const nlohmann::json& json)
 {
     if (!json.IsObject())
     {

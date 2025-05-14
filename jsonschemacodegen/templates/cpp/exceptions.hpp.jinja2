@@ -4,7 +4,6 @@
 #include <vector>
 #include <string>
 #include <sstream>
-#include <boost/algorithm/string/join.hpp>
 
 {%for n in ns-%}
 namespace {{n}} {
@@ -70,7 +69,22 @@ public:
      */
     std::string PathAsString() const
     {
-        return boost::algorithm::join(GetPath(), "/");
+        std::string buffer;
+        std::size_t req_len = 0;
+        for (auto &p : _pathParts) {
+            req_len += 1+p.length();
+        }
+        buffer.reserve(req_len);
+
+        for (auto it = _pathParts.crbegin(); it != _pathParts.crend(); it = std::next(it)) {
+            if (! buffer.empty()) {
+                buffer.append("/");
+            }
+            buffer.append(*it);
+
+        }
+
+        return buffer;
     }
 
 private:

@@ -13,27 +13,26 @@ public:
 
     virtual ~{{Name}}() = default;
 
-    /*! \fn boost::none_t Get() const
-     * \brief returns boost::none which represents "null"
-     * This is pointless because it never returns anything other than boost::none
-     * \returns boost::none
+    /*! \fn bstd::nullopt_t Get() const
+     * \brief returns std::nullopt_t which represents "null"
+     * This is pointless because it never returns anything other than std::nullopt
+     * \returns std::nullopt
      */
-    boost::none_t Get() const;
+    std::nullopt_t Get() const;
 
-    /*! \fn {{Name}} FromJson(const rapidjson::Value& json)
+    /*! \fn {{Name}} FromJson(const nlohmann::json& json)
      * \brief Deserializes a JSON "null" value into a new instance of {{Name}}.
-     * \param json is the RapidJSON value which must be of "null" type.
+     * \param json is the json value which must be of "null" type.
      * \throw {{exception}} If the JSON isn't a null
      * \returns {{Name}}
      */
-    static {{Name}} FromJson(const rapidjson::Value& json);
+    static {{Name}} FromJson(const nlohmann::json& json);
 
-    /*! \fn ToJson(rapidjson::Value& value, rapidjson::Value::AllocatorType& allocator)
+    /*! \fn ToJson(nlohmann::json& value)
      * \brief Sets 'value' to null
-     * \param value is the RapidJSON value which will be modified to contain the serialization
-     * \param allocator is the top-level RapidJSON document allocator which may be used for allocations
+     * \param value is the json value which will be modified to contain the serialization
      */
-    void ToJson(rapidjson::Value& value, rapidjson::Value::AllocatorType& allocator) const;
+    void ToJson(nlohmann::json& value) const;
 
     /*! Sets a string handle associated with this {{Name}} instance.
      * This gets called by a parent object after creating an instance that is used for an object's property.

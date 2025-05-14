@@ -54,7 +54,6 @@ class SchemaBase(collections.UserDict):
 
     def CppIncludes(self, resolver):
         return {
-            '"rapidjson/document.h"',
             "<exception>"
         }
 
@@ -171,7 +170,7 @@ class ObjectSchema(SchemaBase):
 
     def CppIncludes(self, resolver=None):
         incs = super().CppIncludes(resolver=resolver)
-        incs.update({"<boost/optional.hpp>"})
+        incs.update({"<optional>"})
         for _, ps in self.GetPropertySchemas().items():
             incs.update(ps.CppIncludes(resolver))
         return incs
@@ -218,14 +217,14 @@ class StringSchema(SchemaBase):
 
     def CppIncludes(self, resolver=None):
         incs = super().CppIncludes(resolver=resolver)
-        incs.update({"<string>", "<boost/functional/hash.hpp>"})
+        incs.update({"<string>"})
         if 'pattern' in self.data:
             incs.add("<regex>")
         if 'format' in self.data:
             if self.data['format'] == 'uuid':
-                incs.update({"<boost/uuid/uuid.hpp>", "<boost/uuid/random_generator.hpp>", "<boost/uuid/uuid_io.hpp>"})
+                incs.update({"<uuid/uuid.h>"})
             elif self.data['format'] == 'date-time':
-                incs.update({"<boost/optional.hpp>", "<boost/date_time/posix_time/posix_time.hpp>", "<boost/algorithm/string/replace.hpp>"})
+                incs.update({"<chrono>"})
         return incs
 
     def AnExample(self, resolver, index: ExampleIndex):
@@ -250,13 +249,7 @@ class StringEnumSchema(StringSchema):
     def AnExample(self, resolver, index: ExampleIndex):
         return index.Choice(self.data['enum'])
 
-
 class NumberSchema(SchemaBase):
-
-    def CppIncludes(self, resolver=None):
-        incs = super().CppIncludes(resolver=resolver)
-        incs.update({"<boost/lexical_cast.hpp>", "<boost/functional/hash.hpp>"})
-        return incs
 
     def AnExample(self, resolver, index: ExampleIndex):
         for k in ['minimum', 'maximum']:
@@ -267,6 +260,16 @@ class NumberSchema(SchemaBase):
         if 'exclusiveMaximum' in self.data:
             return self.data['exclusiveMaximum'] - (self.data['type'] == 'integer' and 1 or 0.000001)
         return self.data['type'] == 'integer' and 1 or 1.1
+
+class NumberEnumSchema(NumberSchema):
+    
+    def GetExampleCombos(self, resolver) -> int:
+        if 'example' in self.data or 'examples' in self.data or 'default' in self.data:
+            return super().GetExampleCombos(resolver)
+        return len(self.data['enum'])
+    
+    def AnExample(self, resolver, index: ExampleIndex):
+        return index.Choice(self.data['enum'])
 
 class BooleanSchema(SchemaBase):
 
@@ -281,11 +284,6 @@ class BooleanSchema(SchemaBase):
 
 
 class NullSchema(SchemaBase):
-
-    def CppIncludes(self, resolver=None):
-        incs = super().CppIncludes(resolver=resolver)
-        incs.update({"<boost/none.hpp>"})
-        return incs
 
     def AnExample(self, resolver, index: ExampleIndex):
         return None
@@ -378,7 +376,7 @@ class OneOfSchema(CombinatorSchemaBase):
 
     def CppIncludes(self, resolver=None):
         incs = super().CppIncludes(resolver=resolver)
-        incs.update({"<boost/variant.hpp>", "<boost/functional/hash.hpp>"})
+        incs.update({"<variant>"})
         return incs
 
     def GetCommonType(self, resolver):
@@ -476,7 +474,11 @@ def SchemaFactory(schema, root=None):
             if 'enum' in schema:
                 return StringEnumSchema(schema, root)
             return StringSchema(schema, root)
-        elif schema['type'] == 'number' or schema['type'] == 'integer':
+        if schema['type'] == 'integer':
+            if 'enum' in schema:
+                return NumberEnumSchema(schema, root)
+            return NumberSchema(schema, root)
+        elif schema['type'] == 'number':
             return NumberSchema(schema, root)
         elif schema['type'] == 'boolean':
             return BooleanSchema(schema, root)

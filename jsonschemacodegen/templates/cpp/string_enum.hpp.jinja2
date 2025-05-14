@@ -71,7 +71,7 @@ public:
 
     /*! Produce a hash value of the object.
      * \param e A {{Name}} instance from which to produce a hash.
-     * \return a hash number using a boost hashing algorithm.
+     * \return a hash number using a stdlib hashing algorithm.
      */
     friend std::size_t hash_value(const {{Name}}& e);
 
@@ -99,7 +99,7 @@ public:
      * \param json JSON string value that maps to an enumerated value.
      * \throws {{exception}} If the JSON value isn't one of the supported string values.
      */
-    static {{Name}} FromJson(const rapidjson::Value& json);
+    static {{Name}} FromJson(const nlohmann::json& json);
 
     /*! Initializes a {{Name}} object from a string value.
      * \param str must match one of the supported string values.
@@ -109,9 +109,8 @@ public:
 
     /*! Returns a JSON string representation of this object.
      * \param value is modified with the JSON string representation.
-     * \param allocator is the rapidjson allocator object from the parent document.
      */
-    void ToJson(rapidjson::Value& value, rapidjson::Value::AllocatorType& allocator) const;
+    void ToJson(nlohmann::json& value) const;
 
     /*! Returns a string representation of this object.
      * \return string representation without quotes.

@@ -41,7 +41,7 @@
     return *this;
 }
 
-{{className}}& {{className}}::operator=(const boost::posix_time::ptime& value)
+{{className}}& {{className}}::operator=(const std::chrono::system_clock::time_point& value)
 {
     Set(value);
     return *this;
@@ -60,8 +60,13 @@ void {{className}}::Set(const {{std}}string& value)
 {
     try
     {
-        {{std}}string fixedValue = boost::replace_nth_copy(value, "T", 0, " ");
-        Set(boost::posix_time::time_from_string(fixedValue));
+        std::tm t = {};
+        if (strptime(value.c_str(), "%Y-%m-%dT%H:%M:%S%z", &t) == nullptr) {
+            throw std::runtime_error("Failed to parse filename time string");
+        }
+
+        std::time_t timet = timegm(&t);
+        Set(std::chrono::system_clock::from_time_t(timet));
     }
     catch (const std::exception& e)
     {
@@ -74,48 +79,58 @@ void {{className}}::Set(const char* value)
     Set(std::string(value));
 }
 
-void {{className}}::Set(const boost::posix_time::ptime& datetime)
+void {{className}}::Set(const std::chrono::system_clock::time_point& datetime)
 {
     _value = datetime;
 }
 
 void {{className}}::SetNow()
 {
-    Set(boost::posix_time::microsec_clock::universal_time());
+    Set(std::chrono::system_clock::now());
 }
 
 void {{className}}::SetCurrent{{schema.format | PascalCase}}()
 {
-    _value = boost::none;
+    _value = std::nullopt;
 }
 
 std::string {{className}}::GetString() const
 {
-    return boost::posix_time::to_iso_extended_string(Get());
+    std::array<char, 512> buf;
+    
+    std::time_t timet = std::chrono::system_clock::to_time_t(Get());
+    std::tm tm_buf = {};
+    auto tm = gmtime_r(&timet, &tm_buf);
+    if (tm == nullptr) {
+        throw {{exception}}({{std}}string("Could not format timestamp: gmtime"));    
+    }
+
+    auto len = strftime(buf.data(), buf.size(), "%Y-%m-%dT%H:%M:%SZ", tm);
+    if (len == 0) {
+        throw {{exception}}({{std}}string("Could not format timestamp: strfime"));        
+    }
+
+    return std::string(buf.data(), len);
 }
 
 bool {{className}}::IsCurrentTime() const
 {
-    return !(_value);
+    return _value.has_value();
 }
 
-boost::posix_time::ptime {{className}}::Get() const
+std::chrono::system_clock::time_point {{className}}::Get() const
 {
-    if (IsCurrentTime())
-    {
-        return boost::posix_time::microsec_clock::universal_time();
-    }
-    return *_value;
+    return _value.value_or(std::chrono::system_clock::time_point());
 }
 
-{{className}} {{className}}::FromJson(const {{resolver.cpp_resolve_namespace(['rapidjson'])}}Value& json)
+{{className}} {{className}}::FromJson(const nlohmann::json& json)
 {
-    if (!(json.IsString()))
+    if (!(json.is_string()))
     {
         throw {{exception}}("Not a string");
     }
 
-    return {{className}}(json.GetString());
+    return {{className}}(json.get<std::string>());
 }
 
 {{className}} {{className}}::FromString(const {{std}}string& str)
@@ -123,10 +138,9 @@ boost::posix_time::ptime {{className}}::Get() const
     return {{className}}(str);
 }
 
-void {{className}}::ToJson({{resolver.cpp_resolve_namespace(['rapidjson'])}}Value& value, {{resolver.cpp_resolve_namespace(['rapidjson', 'Value'])}}AllocatorType& allocator) const
+void {{className}}::ToJson(nlohmann::json& value) const
 {
-    std::string tempVal(GetString());
-    value.SetString(tempVal.c_str(), tempVal.size(), allocator);  
+    value = GetString();
 }
 
 void {{className}}::SetHandle(const std::string& handle)

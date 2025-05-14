@@ -83,7 +83,7 @@ public:
 
     /*! Produce a hash value of the string.
      * \param str A {{Name}} instance from which to produce a hash.
-     * \return a hash number using a boost hashing algorithm.
+     * \return a hash number using a stdlib hashing algorithm.
      */
     friend std::size_t hash_value(const {{Name}}& str);
 
@@ -104,7 +104,7 @@ public:
      * \return new {{Name}} object containing values from the JSON.
      * \param json JSON structure to use for creating new {{Name}} object.
      */
-    static {{Name}} FromJson(const rapidjson::Value& json);
+    static {{Name}} FromJson(const nlohmann::json& json);
 
     /*! Create a new {{Name}} object from the string.
      * The string must meet the schema's constraints.
@@ -117,9 +117,8 @@ public:
 
     /*! Serialize the {{Name}} instance into a JSON object.
      * \param value is modified to be a string type containing the instance's string value.
-     * \param allocator is used for rapidjson allocation.
      */
-    void ToJson(rapidjson::Value& value, rapidjson::Value::AllocatorType& allocator) const;
+    void ToJson(nlohmann::json& value) const;
 
     /*! Sets a string handle associated with this {{Name}} instance.
      * This gets called by a parent object after creating an instance that is used for an object's property.

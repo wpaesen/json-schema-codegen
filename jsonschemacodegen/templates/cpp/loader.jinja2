@@ -12,6 +12,8 @@
 {%-include 'ref.hpp.jinja2'-%}
 {%-endif-%}
 {%-elif 'type' not in schema-%}
+{%-elif schema.type == 'integer' and schema.enum is defined-%}
+{%-include 'integer_enum.'+filetype+'.jinja2'-%}
 {%-elif schema.type == 'integer' or schema.type == 'number'-%}
 {%-include 'numeric.'+filetype+'.jinja2'-%}
 {%-elif schema.type == 'array'-%}

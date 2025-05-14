@@ -75,23 +75,22 @@ public:
     void Set{{ObjectName(componentName, s)}}(const {{ObjectType(componentName, s)}}& component);
     {%endfor%}
 
-    /*! \fn {{Name}} FromJson(const rapidjson::Value& json)
+    /*! \fn {{Name}} FromJson(const nlohmann::json& json)
      * \brief Deserializes JSON into a new instance of the {{Name}} object.
-     * \param json is the RapidJSON value which must be of object type and conforming to the schema.
+     * \param json is the json value which must be of object type and conforming to the schema.
      * \throw {{exception}} If any of the components don't deserialize correctly according to their schemas.
      * \returns {{Name}}
      */
-    static {{Name}} FromJson(const rapidjson::Value& json);
+    static {{Name}} FromJson(const nlohmann::json& json);
 
-    /*! \fn ToJson(rapidjson::Value& value, rapidjson::Value::AllocatorType& allocator)
+    /*! \fn ToJson(nlohmann::json& value)
      * \brief Serializes the combined (allof) object to JSON
-     * \param value is the RapidJSON value which will be modified to contain the serialization
-     * \param allocator is the top-level RapidJSON document allocator which may be used for allocations
+     * \param value is the json value which will be modified to contain the serialization
      {%-if schema.requiredProperties is defined and schema.requiredProperties | length > 0%}
      * \throw {{exception}} When the resulting JSON object is missing one or more of the following properties: {%for rp in schema.requiredProperties |sort%}`{{rp}}` {%endfor%}
      {%-endif%}
      */
-    void ToJson(rapidjson::Value& value, rapidjson::Value::AllocatorType& allocator) const;
+    void ToJson(nlohmann::json& value) const;
 
     /*! Sets a string handle associated with this {{Name}} instance.
      * This gets called by a parent object after creating an instance that is used for an object's property.
@@ -117,6 +116,6 @@ private:
      * \param json Is completed JSON-object structure.
      * \throws {{exception}} If a property is missing
      */
-    static void ThrowIfMissingRequiredProperties(const rapidjson::Value& json);
+    static void ThrowIfMissingRequiredProperties(const nlohmann::json& json);
     {%-endif%}
 };
