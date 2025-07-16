@@ -50,7 +50,7 @@ public:
     /*! Constructor for initializing object's single {{propSchema.type}} property.
      * \param {{propName | camelCase}} value for initialization.
     */
-    {{Name}}({{ {"boolean":"bool", "integer":"int", "string":"const std::string&", "number":"double"}[propSchema.type] }} {{propName | camelCase}});
+    {{Name}}({{ {"boolean":"bool", "integer":"int64_t", "string":"const std::string&", "number":"double"}[propSchema.type] }} {{propName | camelCase}});
     {%-endif%} {# propschema type #}
     {%-endif%} {# single property object #}
 

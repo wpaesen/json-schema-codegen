@@ -1,6 +1,6 @@
 {%-import 'constraints.jinja2' as constraint-%}
 {%-set exception %}{{resolver.cpp_get_lib_ns() | join('::')}}::JsonSchemaException{%endset%}
-{%-if schema.type == 'integer'%}{%-set cpptype = 'int'%}{%-else%}{%-set cpptype = 'double'%}{%-endif-%}
+{%-if schema.type == 'integer'%}{%-set cpptype = 'int64_t'%}{%-else%}{%-set cpptype = 'double'%}{%-endif-%}
 /*! {{Name}} is a wrapper around a {{schema.type}}.
  * \brief wrapper around {{cpptype}}
  {%-if schema.description %}

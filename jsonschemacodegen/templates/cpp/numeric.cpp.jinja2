@@ -1,6 +1,6 @@
 {%-import 'constraints.jinja2' as constraint-%}
 {%-if schema.type == 'number_integer'%}{%-set rjtype = 'integer'%}{%-else%}{%-set rjtype = 'number'%}{%-endif-%}
-{%-if schema.type == 'integer'%}{%-set cpptype = 'int'%}{%-else%}{%-set cpptype = 'double'%}{%-endif%}
+{%-if schema.type == 'integer'%}{%-set cpptype = 'int64_t'%}{%-else%}{%-set cpptype = 'double'%}{%-endif%}
 {%-set std = resolver.cpp_resolve_namespace(['std']) %}
 {%-set className = resolver.cpp_resolve_namespace(ns)+Name%}
 {%-set exception %}{{resolver.cpp_get_lib_ns() | join('::')}}::JsonSchemaException{%endset%}
